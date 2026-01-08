@@ -261,6 +261,7 @@ function iniciarPartida() {
 
     if (catSelect === 'MIXTO') {
         const keys = Object.keys(CATEGORIAS);
+        // Excluimos la opción MIXTO si estuviera en las llaves (aunque en este objeto no está)
         const randomKey = keys[Math.floor(Math.random() * keys.length)];
         palabrasPosibles = CATEGORIAS[randomKey];
         catFinal = "MIXTO (" + randomKey + ")";
@@ -270,12 +271,22 @@ function iniciarPartida() {
 
     const palabraSecreta = palabrasPosibles[Math.floor(Math.random() * palabrasPosibles.length)];
     
-    // Elegir Impostor
+    // Elegir Impostor con validación de jugadores
     roomRef.child('players').get().then(snap => {
-        const ids = Object.keys(snap.val());
+        const players = snap.val();
+        if (!players) return;
+
+        const ids = Object.keys(players);
+
+        // --- NUEVO: MÍNIMO 3 JUGADORES ---
+        if (ids.length < 3) {
+            alert("⚠️ ¡Faltan jugadores! Se necesitan mínimo 3 para que el juego tenga sentido.");
+            return; // Esto detiene el inicio del juego
+        }
+
         const impostorId = ids[Math.floor(Math.random() * ids.length)];
 
-        // Actualizar Firebase para que todos cambien de pantalla a la vez
+        // Actualizar Firebase para todos
         roomRef.update({
             estado: 'jugando',
             categoria: catFinal,
@@ -291,13 +302,25 @@ function configurarCarta(data) {
     const roleDesc = document.getElementById('secretWord');
 
     if (myId === data.impostor) {
+        // VISTA DEL IMPOSTOR
         roleTitle.innerText = "😈 ERES EL IMPOSTOR";
-        roleTitle.style.color = "red";
-        roleDesc.innerText = "Engaña a todos. No sabes la palabra.";
+        roleTitle.style.color = "#d32f2f"; // Rojo intenso
+        
+        // --- NUEVO: PISTA VISUAL ---
+        // Le mostramos la categoría en grande para que improvise
+        roleDesc.innerHTML = `
+            <span style="font-size: 0.8em; color: #555;">Tu misión: Pasa desapercibido.</span><br><br>
+            💡 <strong>PISTA:</strong> El tema es<br>
+            <span style="color: #e65100; font-size: 1.3em; text-decoration: underline;">${data.categoria}</span>
+        `;
     } else {
+        // VISTA DEL CIUDADANO
         roleTitle.innerText = "CIUDADANO";
-        roleTitle.style.color = "#03dac6";
-        roleDesc.innerText = "Palabra: " + data.palabra;
+        roleTitle.style.color = "#00796b"; // Verde
+        roleDesc.innerHTML = `
+            <span style="font-size: 0.8em; color: #555;">La palabra secreta es:</span><br><br>
+            <span style="font-size: 1.5em;">${data.palabra}</span>
+        `;
     }
 }
 
