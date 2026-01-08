@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impostor PRO - Google Edition</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Carter+One&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="screen-login">
+            <h1>🕵️ EL IMPOSTOR</h1>
+            <input type="text" id="playerName" placeholder="Tu Apodo">
+            <div class="buttons">
+                <button  onclick="crearSala()" class="btn-primary crear">👑 Crear Sala Nueva</button>
+                <div class="join-group">
+                    <input type="text" id="roomCodeInput" placeholder="Código de sala">
+                    <button onclick="unirseSala()" class="btn-secondary">Entrar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-lobby" class="hidden">
+            <div class="header">
+                <h2>Sala: <span id="lobbyCode" class="highlight"></span></h2>
+                <button onclick="salirJuego()" class="btn-small">Salir</button>
+            </div>
+            
+            <div id="adminPanel" class="hidden admin-box">
+                <h3>🛠 Panel de Admin</h3>
+                <select id="categorySelect">
+                    </select>
+                <button onclick="iniciarPartida()">▶ INICIAR PARTIDA</button>
+                <button onclick="resetearPartida()" class="btn-warning">🔄 REINICIAR</button>
+            </div>
+
+            <div class="player-list-box">
+                <h3>Jugadores (<span id="playerCount">0</span>)</h3>
+                <ul id="playersList"></ul>
+            </div>
+        </div>
+
+        <div id="screen-game" class="hidden">
+            <div class="header">
+                <h3>Categoría: <span id="gameCategory">...</span></h3>
+            </div>
+
+            <div class="scene">
+                <div class="card" id="gameCard" onclick="voltearCarta()">
+                    <div class="card-face card-front">
+                        <span class="icon">👆</span>
+                        <p>TOCA PARA VER TU ROL</p>
+                        <small>Mantenlo en secreto</small>
+                    </div>
+                    <div class="card-face card-back">
+                        <h2 id="secretRole">...</h2>
+                        <p id="secretWord">...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminGameControls" class="hidden">
+                <button onclick="pausarJuego()" class="btn-warning">⏸ PAUSAR / REVELAR</button>
+                <button onclick="volverAlLobby()" class="btn-secondary">Volver al Lobby</button>
+            </div>
+        </div>
+    </div>
+    <script src="logic.js"></script>
+</body>
+</html>
