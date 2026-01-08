@@ -1,221 +1,31 @@
-/* =========================================
-   ESTILO: JUEGO DE MESA (TABLETOP EDITION)
-   ========================================= */
-
-/* --- 1. VARIABLES DE COLORES Y MATERIALES --- */
-:root {
-    --wood-dark: #3e2723;       /* Madera oscura (bordes) */
-    --wood-light: #5d4037;      /* Madera clara (fondo) */
-    --paper-cream: #f4e1c1;     /* Papel antiguo/Cartón */
-    --paper-white: #fff8e1;     /* Papel de inputs */
-    
-    /* Colores de Fichas/Botones */
-    --gold-token: #ffb300;
-    --gold-shadow: #b27d00;
-    --red-felt: #e53935;
-    --red-shadow: #b71c1c;
-    --teal-felt: #00897b;
-    --teal-shadow: #004d40;
-    
-    /* Tipografías */
-    --font-title: 'Carter One', cursive;
-    --font-body: 'Roboto Slab', serif;
-}
-
-/* --- 2. CONFIGURACIÓN GENERAL Y FONDO DE MESA --- */
-body {
-    margin: 0;
-    padding: 0;
-    font-family: var(--font-body);
-    /* Fondo: Mesa de madera con iluminación central (tipo lámpara) */
-    background: radial-gradient(circle at center, #6d4c41 0%, #3e2723 100%);
-    color: #3e2723;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    overflow-x: hidden; /* Evita scroll lateral en móviles */
-}
-
-/* --- 3. EL TABLERO (CONTENEDOR PRINCIPAL) --- */
-.container {
-    width: 90%;
-    max-width: 480px; /* Ancho ideal para móvil */
-    background-color: var(--paper-cream);
-    padding: 25px 20px;
-    border-radius: 20px;
-    /* Borde grueso tipo tablero */
-    border: 8px solid var(--wood-dark);
-    /* Sombra realista para que "flote" en la mesa */
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6), 
-                inset 0 0 20px rgba(62, 39, 35, 0.2);
-    position: relative;
-    text-align: center;
-}
-
-/* Tornillos decorativos en las esquinas */
-.container::before, .container::after {
-    content: '+';
-    position: absolute;
-    top: 8px;
-    font-family: monospace;
-    font-size: 24px;
-    color: var(--wood-dark);
-    opacity: 0.6;
-}
-.container::before { left: 12px; }
-.container::after { right: 12px; }
-
-/* --- 4. TIPOGRAFÍA Y TEXTOS --- */
-h1, h2, h3 {
-    font-family: var(--font-title);
-    margin-top: 0;
-    color: var(--wood-dark);
-    text-shadow: 1px 1px 0px rgba(255,255,255,0.4);
-}
-
-h1 { font-size: 2.5rem; letter-spacing: 2px; margin-bottom: 20px; }
-h2 { font-size: 1.5rem; }
-p, span { font-size: 1rem; }
-
+/* Utilidad obligatoria para la lógica JS */
 .hidden { display: none !important; }
 
-/* --- 5. INPUTS (Aspecto de papel) --- */
-input, select {
-    width: 100%;
-    box-sizing: border-box; /* Para que el padding no rompa el ancho */
-    padding: 15px;
-    margin: 10px 0;
-    border: 3px solid var(--wood-light);
-    border-radius: 10px;
-    background-color: var(--paper-white);
-    color: var(--wood-dark);
-    font-family: var(--font-body);
-    font-weight: bold;
-    font-size: 16px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    outline: none;
-}
-input:focus { border-color: var(--gold-token); }
-
-/* --- 6. BOTONES (Aspecto de Fichas 3D) --- */
-button {
-    width: 100%;
-    padding: 16px;
-    border: none;
-    border-radius: 12px;
-    font-family: var(--font-title);
-    font-size: 1.2rem;
-    cursor: pointer;
-    margin-top: 15px;
-    position: relative;
-    transition: transform 0.1s;
-    /* Efecto 3D sólido */
-    border-bottom: 5px solid rgba(0,0,0,0.3); 
-    text-transform: uppercase;
-    letter-spacing: 1px;
+/* Fondo general */
+body {
+    /* Patrón de puntos sutil para fondo tech */
+    background-image: radial-gradient(#444 1px, transparent 1px);
+    background-size: 20px 20px;
 }
 
-button:active {
-    transform: translateY(4px); /* Se hunde */
-    border-bottom-width: 1px;
-}
-
-/* Colores de botones */
-.btn-primary { 
-    background-color: var(--gold-token); 
-    color: #3e2723;
-    border-bottom-color: var(--gold-shadow);
-}
-
-.btn-secondary { 
-    background-color: var(--teal-felt); 
-    color: white;
-    border-bottom-color: var(--teal-shadow);
-}
-
-.btn-warning { 
-    background-color: var(--red-felt); 
-    color: white;
-    border-bottom-color: var(--red-shadow);
-}
-
-.btn-small {
-    width: auto;
-    padding: 8px 20px;
-    font-size: 0.9rem;
-    margin-top: 0;
-    border-bottom-width: 3px;
-}
-
-/* Grupos de botones (Input + Botón al lado) */
-.join-group {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-}
-.join-group input { flex: 2; margin-top: 0;}
-.join-group button { flex: 1; margin-top: 0; padding: 15px 5px; } /* Ajuste para que cuadre con el input */
-
-/* --- 7. PANELES INTERNOS --- */
-.admin-box {
-    border: 3px dashed var(--wood-light);
-    background: rgba(255,255,255,0.4);
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid rgba(62, 39, 35, 0.2);
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-}
-
-.highlight {
-    color: var(--red-felt);
-    font-family: monospace;
-    background: #fff;
-    padding: 2px 8px;
-    border-radius: 5px;
-    border: 1px solid var(--wood-light);
-}
-
-/* Lista de Jugadores */
-ul { list-style: none; padding: 0; }
-li {
-    background: #fff;
-    margin-bottom: 8px;
-    padding: 12px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 0 rgba(0,0,0,0.1);
-    font-weight: bold;
-}
-
-/* --- 8. LA CARTA (LÓGICA 3D) --- */
+/* --- ANIMACIÓN 3D DE LA CARTA --- */
 .scene {
     width: 100%;
-    height: 350px; /* Altura de la carta */
+    height: 320px; /* Altura fija para evitar desbordes */
     perspective: 1000px;
-    margin: 20px 0;
+    position: relative;
+    cursor: pointer;
 }
 
-.card {
+.card-3d {
     width: 100%;
     height: 100%;
     position: relative;
-    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efecto rebote */
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
     transform-style: preserve-3d;
-    cursor: pointer;
 }
 
-.card.is-flipped {
+.card-3d.is-flipped {
     transform: rotateY(180deg);
 }
 
@@ -223,56 +33,49 @@ li {
     position: absolute;
     width: 100%;
     height: 100%;
-    backface-visibility: hidden;
-    border-radius: 20px;
+    backface-visibility: hidden; /* Oculta la parte de atrás */
+    border-radius: 15px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    /* Borde blanco grueso estilo naipe */
-    border: 12px solid white;
-    background-color: white; /* Base */
+    padding: 20px;
 }
 
-/* Frente (Diseño decorativo) */
-.card-front {
-    background: repeating-linear-gradient(
-        45deg,
-        #2c3e50,
-        #2c3e50 10px,
-        #34495e 10px,
-        #34495e 20px
-    );
-    color: white;
-}
-.card-front .icon {
-    font-size: 60px;
-    margin-bottom: 10px;
-    text-shadow: 0 4px 0 rgba(0,0,0,0.3);
-}
-
-/* Reverso (Información) */
 .card-back {
-    background: var(--paper-cream);
     transform: rotateY(180deg);
-    color: var(--wood-dark);
+    background: #f8f9fa; /* Blanco Bootstrap */
+    color: #212529;
 }
 
-/* Textos dentro de la carta */
-#secretRole {
-    font-family: var(--font-title);
-    font-size: 2rem;
-    border-bottom: 4px solid var(--wood-dark);
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-}
-#secretWord {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: var(--teal-felt);
+/* Borde punteado para el panel admin */
+.border-dashed {
+    border-style: dashed !important;
+    border-width: 2px !important;
 }
 
-.crear{
-    margin-bottom: 1rem;
+/* --- CORRECCIÓN DE LA LISTA DE JUGADORES (Desde JS) --- */
+/* Como logic.js crea <li> simples, los estilizamos aquí para que parezcan Bootstrap */
+#playersList li {
+    background-color: #2b3035;
+    color: white;
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    border: 1px solid #373b3e;
+    display: flex;
+    justify-content: space-between; /* Separa nombre del botón borrar */
+    align-items: center;
+}
+
+/* Estilo para el botón de expulsar que genera el JS */
+#playersList li button {
+    background-color: #dc3545; /* Rojo Bootstrap */
+    color: white;
+    border: none;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-left: 10px;
 }
