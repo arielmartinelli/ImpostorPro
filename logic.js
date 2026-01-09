@@ -335,7 +335,7 @@ function configurarCarta(data) {
     if (myId === data.impostor) {
         // VISTA DEL IMPOSTOR
         roleTitle.innerText = "😈 ERES EL IMPOSTOR";
-        roleTitle.style.color = "#dc3545"; // Rojo Bootstrap
+        roleTitle.style.color = "#dc3545"; // Rojo
         
         roleDesc.innerHTML = `
             <span style="font-size: 0.8em; color: #6c757d;">Tu misión: Engaña a todos.</span><br><br>
@@ -345,10 +345,12 @@ function configurarCarta(data) {
     } else {
         // VISTA DEL CIUDADANO
         roleTitle.innerText = "CIUDADANO";
-        roleTitle.style.color = "#198754"; // Verde Bootstrap
+        roleTitle.style.color = "#198754"; // Verde
+        
+        // AQUÍ ESTABA EL ERROR: Cambié color: #fff por color: #212529 (Negro suave)
         roleDesc.innerHTML = `
             <span style="font-size: 0.8em; color: #6c757d;">La palabra secreta es:</span><br><br>
-            <span style="font-size: 1.5em; color: #fff;">${data.palabra}</span>
+            <span style="font-size: 1.5em; color: #212529; font-weight: bold;">${data.palabra}</span>
         `;
     }
 }
