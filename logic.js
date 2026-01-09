@@ -1,13 +1,12 @@
 // --- CONFIGURACIÓN DE FIREBASE ---
-// REEMPLAZA ESTO CON TUS DATOS DE LA CONSOLA DE FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyCRh0mUaV7aNoRufDPxU64045Tfl8YViMQ",
-  authDomain: "impostorpro-51efb.firebaseapp.com",
-  databaseURL: "https://impostorpro-51efb-default-rtdb.firebaseio.com",
-  projectId: "impostorpro-51efb",
-  storageBucket: "impostorpro-51efb.firebasestorage.app",
-  messagingSenderId: "907081902354",
-  appId: "1:907081902354:web:d88d5a302275ba789a2bcb"
+    authDomain: "impostorpro-51efb.firebaseapp.com",
+    databaseURL: "https://impostorpro-51efb-default-rtdb.firebaseio.com",
+    projectId: "impostorpro-51efb",
+    storageBucket: "impostorpro-51efb.firebasestorage.app",
+    messagingSenderId: "907081902354",
+    appId: "1:907081902354:web:d88d5a302275ba789a2bcb"
 };
 
 // Inicializar Firebase
@@ -146,11 +145,13 @@ let currentRoom = "";
 let iAmAdmin = false;
 let roomRef = null;
 
-// Referencias DOM
+// Referencias DOM (¡Actualizado con las nuevas pantallas!)
 const screens = {
     login: document.getElementById('screen-login'),
     lobby: document.getElementById('screen-lobby'),
-    game: document.getElementById('screen-game')
+    game: document.getElementById('screen-game'),
+    voting: document.getElementById('screen-voting'),
+    results: document.getElementById('screen-results')
 };
 
 // --- FUNCIONES PRINCIPALES ---
@@ -172,7 +173,7 @@ function crearSala() {
     roomRef = db.ref('salas/' + roomId);
     roomRef.set({
         admin: myId,
-        estado: 'lobby', // lobby, jugando
+        estado: 'lobby', // lobby, jugando, votando, resultados
         categoria: '',
         palabra: '',
         impostor: '',
@@ -219,7 +220,12 @@ function conectarASala() {
     // ESCUCHAR CAMBIOS EN REALTIME (La magia de Google)
     roomRef.on('value', (snapshot) => {
         const data = snapshot.val();
-        if (!data) return alert("La sala fue cerrada"); // Sala eliminada
+        if (!data) {
+            // Si la sala se borró y no soy admin, avisar
+            if(!iAmAdmin) alert("La sala fue cerrada");
+            location.reload();
+            return;
+        }
 
         // 1. Verificar si soy Admin
         if (data.admin === myId) {
@@ -235,21 +241,45 @@ function conectarASala() {
         Object.entries(data.players || {}).forEach(([id, p]) => {
             count++;
             const li = document.createElement('li');
+            li.className = "list-group-item d-flex justify-content-between align-items-center bg-transparent text-white border-secondary";
             li.innerHTML = `
                 <span>${p.name} ${id === data.admin ? '👑' : ''}</span>
-                ${iAmAdmin && id !== myId ? `<button onclick="expulsar('${id}')" style="width:auto;padding:5px;margin:0;background:red;">❌</button>` : ''}
+                ${iAmAdmin && id !== myId ? `<button onclick="expulsar('${id}')" class="btn btn-sm btn-danger py-0">❌</button>` : ''}
             `;
             list.appendChild(li);
         });
         document.getElementById('playerCount').innerText = count;
 
-        // 3. Controlar Estados del Juego
+        // 3. Controlar Estados del Juego (ACTUALIZADO)
         if (data.estado === 'lobby') {
             mostrarPantalla('lobby');
             resetearCarta();
+            document.getElementById('voteControlContainer').innerHTML = ""; // Limpiar botón votar
+        
         } else if (data.estado === 'jugando') {
             mostrarPantalla('game');
             configurarCarta(data);
+            
+            // Inyectar botón de votación si soy admin
+            if(iAmAdmin) {
+                const container = document.getElementById('voteControlContainer');
+                // Evitamos duplicar el botón si ya existe
+                if(!container.hasChildNodes()) {
+                    const btn = document.createElement('button');
+                    btn.className = "btn btn-warning w-100 py-3 fw-bold mt-3 shadow-sm";
+                    btn.innerHTML = '<i class="bi bi-megaphone-fill"></i> INICIAR VOTACIÓN';
+                    btn.onclick = iniciarFaseVotacion;
+                    container.appendChild(btn);
+                }
+            }
+
+        } else if (data.estado === 'votando') {
+            mostrarPantalla('voting');
+            renderizarVotacion(data.players);
+
+        } else if (data.estado === 'resultados') {
+            mostrarPantalla('results');
+            mostrarResultadosFinales(data);
         }
     });
 }
@@ -261,7 +291,6 @@ function iniciarPartida() {
 
     if (catSelect === 'MIXTO') {
         const keys = Object.keys(CATEGORIAS);
-        // Excluimos la opción MIXTO si estuviera en las llaves (aunque en este objeto no está)
         const randomKey = keys[Math.floor(Math.random() * keys.length)];
         palabrasPosibles = CATEGORIAS[randomKey];
         catFinal = "MIXTO (" + randomKey + ")";
@@ -278,20 +307,22 @@ function iniciarPartida() {
 
         const ids = Object.keys(players);
 
-        // --- NUEVO: MÍNIMO 3 JUGADORES ---
+        // --- MÍNIMO 3 JUGADORES ---
         if (ids.length < 3) {
             alert("⚠️ ¡Faltan jugadores! Se necesitan mínimo 3 para que el juego tenga sentido.");
-            return; // Esto detiene el inicio del juego
+            return; 
         }
 
         const impostorId = ids[Math.floor(Math.random() * ids.length)];
 
-        // Actualizar Firebase para todos
+        // Actualizar Firebase para todos (Limpiamos votos anteriores)
         roomRef.update({
             estado: 'jugando',
             categoria: catFinal,
             palabra: palabraSecreta,
-            impostor: impostorId
+            impostor: impostorId,
+            votos: null, 
+            resultadoFinal: null
         });
     });
 }
@@ -304,22 +335,20 @@ function configurarCarta(data) {
     if (myId === data.impostor) {
         // VISTA DEL IMPOSTOR
         roleTitle.innerText = "😈 ERES EL IMPOSTOR";
-        roleTitle.style.color = "#d32f2f"; // Rojo intenso
+        roleTitle.style.color = "#dc3545"; // Rojo Bootstrap
         
-        // --- NUEVO: PISTA VISUAL ---
-        // Le mostramos la categoría en grande para que improvise
         roleDesc.innerHTML = `
-            <span style="font-size: 0.8em; color: #555;">Tu misión: Pasa desapercibido.</span><br><br>
+            <span style="font-size: 0.8em; color: #6c757d;">Tu misión: Engaña a todos.</span><br><br>
             💡 <strong>PISTA:</strong> El tema es<br>
-            <span style="color: #e65100; font-size: 1.3em; text-decoration: underline;">${data.categoria}</span>
+            <span style="color: #fd7e14; font-size: 1.3em; text-decoration: underline;">${data.categoria}</span>
         `;
     } else {
         // VISTA DEL CIUDADANO
         roleTitle.innerText = "CIUDADANO";
-        roleTitle.style.color = "#00796b"; // Verde
+        roleTitle.style.color = "#198754"; // Verde Bootstrap
         roleDesc.innerHTML = `
-            <span style="font-size: 0.8em; color: #555;">La palabra secreta es:</span><br><br>
-            <span style="font-size: 1.5em;">${data.palabra}</span>
+            <span style="font-size: 0.8em; color: #6c757d;">La palabra secreta es:</span><br><br>
+            <span style="font-size: 1.5em; color: #fff;">${data.palabra}</span>
         `;
     }
 }
@@ -333,17 +362,132 @@ function voltearCarta() {
     }
 }
 
-// Funciones de Admin
-function expulsar(idJugador) {
-    if(confirm("¿Sacar a este jugador?")) {
-        db.ref('salas/' + currentRoom + '/players/' + idJugador).remove();
+function resetearCarta() {
+    const card = document.getElementById('gameCard');
+    if(card) card.classList.remove('is-flipped');
+}
+
+// --- LÓGICA DE VOTACIÓN ---
+
+function iniciarFaseVotacion() {
+    roomRef.update({
+        estado: 'votando',
+        votos: {} 
+    });
+}
+
+function renderizarVotacion(players) {
+    const container = document.getElementById('voting-buttons');
+    const status = document.getElementById('vote-status');
+    container.innerHTML = '';
+    
+    // Resetear visualización
+    status.className = "alert alert-info py-2";
+    status.innerText = "Selecciona al sospechoso...";
+
+    Object.entries(players).forEach(([id, p]) => {
+        // No permitimos votarnos a nosotros mismos para simplificar
+        if (id !== myId) {
+            const btn = document.createElement('button');
+            btn.innerText = p.name;
+            btn.className = 'btn btn-outline-light btn-lg py-3 fw-bold'; 
+            btn.onclick = () => enviarVoto(id);
+            container.appendChild(btn);
+        }
+    });
+}
+
+function enviarVoto(targetId) {
+    // Registrar voto en Firebase
+    roomRef.child('votos').child(myId).set(targetId);
+    
+    // Feedback visual inmediato
+    document.getElementById('voting-buttons').innerHTML = ''; // Limpiar botones
+    const status = document.getElementById('vote-status');
+    status.className = "alert alert-success py-2";
+    status.innerHTML = '<i class="bi bi-check-circle"></i> ¡Voto enviado! Esperando a los demás...';
+    
+    // Si soy Admin, monitoreo los votos
+    if (iAmAdmin) {
+        verificarFinVotacion();
     }
 }
 
-function volverAlLobby() {
-    roomRef.update({ estado: 'lobby' });
+function verificarFinVotacion() {
+    roomRef.get().then(snap => {
+        const data = snap.val();
+        if(!data.players) return;
+
+        const totalJugadores = Object.keys(data.players).length;
+        const totalVotos = data.votos ? Object.keys(data.votos).length : 0;
+
+        // Si todos votaron, calculamos
+        if (totalVotos >= totalJugadores) {
+            calcularResultados(data);
+        }
+    });
 }
 
-function salirJuego() {
-    location.reload();
+function calcularResultados(data) {
+    const conteo = {};
+    let masVotadoId = null;
+    let maxVotos = -1;
+
+    // Contar votos
+    if (data.votos) {
+        Object.values(data.votos).forEach(votoPara => {
+            conteo[votoPara] = (conteo[votoPara] || 0) + 1;
+        });
+    }
+
+    // Buscar al más votado
+    Object.entries(conteo).forEach(([id, numVotos]) => {
+        if (numVotos > maxVotos) {
+            maxVotos = numVotos;
+            masVotadoId = id;
+        }
+    });
+
+    // Lógica de victoria
+    let titulo = "";
+    let colorTitulo = "";
+    let expulsadoNombre = masVotadoId ? data.players[masVotadoId].name : "Nadie";
+
+    // Si hay empate o nadie votó
+    if (!masVotadoId) {
+        titulo = "😐 EMPATE / NADIE";
+        colorTitulo = "#ffc107"; // Amarillo
+    } else if (masVotadoId === data.impostor) {
+        titulo = "🏆 ¡GANAN LOS CIUDADANOS!";
+        colorTitulo = "#198754"; // Verde
+    } else {
+        titulo = "💀 GANÓ EL IMPOSTOR";
+        colorTitulo = "#dc3545"; // Rojo
+    }
+
+    roomRef.update({
+        estado: 'resultados',
+        resultadoTitulo: titulo,
+        resultadoColor: colorTitulo,
+        expulsado: expulsadoNombre
+    });
 }
+
+function mostrarResultadosFinales(data) {
+    const title = document.getElementById('result-title');
+    const details = document.getElementById('result-details');
+    const adminControls = document.getElementById('adminRestartControls');
+    const waitingText = document.getElementById('waitingText');
+    
+    // Datos del impostor real
+    const impostorName = data.players[data.impostor] ? data.players[data.impostor].name : "Desconocido";
+
+    title.innerText = data.resultadoTitulo;
+    title.style.color = data.resultadoColor;
+    
+    details.innerHTML = `
+        <span class="text-muted">El pueblo expulsó a:</span><br>
+        <strong class="text-white">${data.expulsado}</strong>
+    `;
+
+    document.getElementById('real-impostor-name').
