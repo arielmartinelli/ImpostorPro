@@ -490,4 +490,32 @@ function mostrarResultadosFinales(data) {
         <strong class="text-white">${data.expulsado}</strong>
     `;
 
-    document.getElementById('real-impostor-name').
+    document.getElementById('real-impostor-name').innerText = impostorName;
+
+    if (iAmAdmin) {
+        adminControls.classList.remove('hidden');
+        waitingText.classList.add('hidden');
+    } else {
+        adminControls.classList.add('hidden');
+        waitingText.classList.remove('hidden');
+    }
+}
+
+// Funciones de Admin / Generales
+function expulsar(idJugador) {
+    if(confirm("¿Sacar a este jugador?")) {
+        db.ref('salas/' + currentRoom + '/players/' + idJugador).remove();
+    }
+}
+
+function volverAlLobby() {
+    roomRef.update({ estado: 'lobby', votos: null, resultadoFinal: null });
+}
+
+function resetearPartida() {
+    volverAlLobby();
+}
+
+function salirJuego() {
+    location.reload();
+}
